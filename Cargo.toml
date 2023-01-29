@@ -6,5 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-winapi = { version = "0.3.9", features = ["winuser", "libloaderapi"] }
+ctrlc = "3.2.4"
+winapi = { version = "0.3.9", features = ["winuser", "libloaderapi", "hidpi", "errhandlingapi", "hidsdi", "ntdef"] }
 winit = "0.27.5"

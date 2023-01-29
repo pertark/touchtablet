@@ -1,68 +1,38 @@
-use winapi::ctypes::c_void;
-use winapi::shared::minwindef::LPARAM;
-use winit::event::{DeviceEvent,Event,WindowEvent};
-use winit::event_loop::EventLoop;
-use winit::event_loop::ControlFlow;
-use winit::event::Touch;
-use winit::window::WindowBuilder;
-
-use winapi::um::winuser::*;
-
 use touchtablet::*;
+use winapi::{um::winuser::*, shared::ntdef::NULL};
+use std::{ptr::{null, null_mut}, sync::Arc};
+use std::sync::mpsc::{channel, Receiver, Sender};
+
+unsafe extern "system" fn block_mouse_input(n_code: i32, w_param: usize, l_param: isize) -> isize {
+    if n_code < 0 {
+        return CallNextHookEx(null_mut(), n_code, w_param, l_param)
+    }
+    return -1;
+}
+
+fn hook_loop(rx: Receiver<()>) {
+    unsafe {
+        let hook_handle = SetWindowsHookExA(WH_MOUSE_LL, Some(block_mouse_input), null_mut(), 0);
+        rx.recv().unwrap();
+        UnhookWindowsHookEx(hook_handle);
+    }   
+}
 
 fn main() {
-    println!("touchtablet started.");
-    get_devices();
+    println!("touchtablet started.");    
+ 
+    // let (tx, rx) = channel::<()>();
+    // hook_loop(rx);
 
+    // ctrlc::set_handler(move || {
+    //     tx.send(()).unwrap();
+    //     println!("CTRL-C");
+    //     std::process::exit(-1);
+    // }).expect("Error setting ctrl-c handler");
+    // get_devices();
 
     let hwnd = listener_window();
     attach(hwnd);
     message_loop(hwnd);   
 
-    // unsafe {
-    //     let mut raw_input: RAWINPUT = std::mem::MaybeUninit::uninit().assume_init();
-    //     let l_param: LPARAM = std::mem::MaybeUninit::uninit().assume_init();
-
-    //     GetRawInputData(&mut l_param as *mut _ as HRAWINPUT,
-    //         RID_INPUT, 
-    //         &mut raw_input as *mut _ as *mut winapi::ctypes::c_void, 
-    //         pcbSize, cbSizeHeader);
-    // }
-
-
-    // unsafe {
-    //     let confuse: *mut c_void;
-    //     let mut raw_dev_list = RAWINPUTDEVICELIST { 
-    //         hDevice: confuse,
-    //         dwType: RIM_TYPEHID
-    //     }; 
-        
-    //     let mut raw_raw_dev_list = &mut raw_dev_list as *mut RAWINPUTDEVICELIST;
-
-    //     let mut num = 3u32;
-    //     let puiNumDevices = &mut num as *mut u32;
-
-    //     GetRawInputDeviceList(raw_raw_dev_list, puiNumDevices, 48);
-    //     // winuser::GetRawInputDeviceInfoA(winuser::TOUCHINPUT, uiCommand, pData, pcbSize);
-    //     // winuser::GetRawInputDeviceInfoW(hDevice, uiCommand, pData, pcbSize);
-    // }
-    // winuser::PT_TOUCHPAD
-    // let el = EventLoop::new();
-    // let window = WindowBuilder::new().build(&el).unwrap();
-
-    // el.run(|event, _, control_flow| {
-    //     // *control_flow = ControlFlow::Wait;
-
-    //     println!("{:?}\n{:?}", event, control_flow);
-
-    //     match event {
-    //         Event::DeviceEvent { device_id, event: device_event } => {
-    //             println!("{:?} {:?}", device_event, device_id)
-    //         },
-    //         Event::WindowEvent { window_id, event: window_event } => {
-    //             println!("{:?} {:?}", window_event, window_id);
-    //         }
-    //         _ => ()
-    //     }
-    // })
 }
